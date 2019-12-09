@@ -171,7 +171,7 @@ end
 ---#endregion /HELPERS
 
 local function load_config(wep)
-    local cfg_to_load = prefix_input_ref .. wep
+    local cfg_to_load = ui.get(prefix_input_ref) .. wep
     cfg_to_load = cfg_to_load:lower()
 
     current_wep_name = wep
