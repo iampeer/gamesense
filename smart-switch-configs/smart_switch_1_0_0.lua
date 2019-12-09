@@ -175,6 +175,8 @@ local function load_config(wep)
     cfg_to_load = cfg_to_load:lower()
 
     current_wep_name = wep
+
+    config.load(cfg_to_load)
 end
 
 local function preload(weapon_id)
