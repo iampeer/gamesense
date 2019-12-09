@@ -206,10 +206,10 @@ local function update_config_tools_visibility(state)
 
     ui.set(prefix_input_ref, "prefix_")
 
-    ui.set_visible(load_ref, display_state)
-    ui.set_visible(delete_ref, display_state)
-    ui.set_visible(reset_ref, display_state)
-    ui.set_visible(import_ref, display_state)
+    ui.set_visible(load_ref, true)
+    ui.set_visible(delete_ref, true)
+    ui.set_visible(reset_ref, true)
+    ui.set_visible(import_ref, true)
 
     return display_state
 end
