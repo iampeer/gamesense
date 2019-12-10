@@ -5,12 +5,6 @@
 
 local scout_wep_id = 40
 
-local off_hc_on_zero = function()
-    local hc_zero = "Off"
-
-    return hc_zero
-end
-
 local function fl_onground(ent)
     local flags = entity.get_prop(ent, "m_fFlags")
     local flags_on_ground = bit.band(flags, 1)
@@ -37,7 +31,7 @@ local data =  {
     ),
 
     hc_value = ui.new_slider(
-        "RAGE", "Aimbot", "In-air minimum hit chance", 0, 100, 50, true, "%", 1, off_hc_on_zero()
+        "RAGE", "Aimbot", "In-air minimum hit chance", 0, 100, 50, true, "%", 1
     )
 }
 
