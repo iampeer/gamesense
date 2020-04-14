@@ -17,6 +17,20 @@ local weapons = {
     --["Shotgun"] = {25, 27, 29, 35}
 }
 
+--/minimum health to toggle delay shot for
+local health = {
+	["Auto"] = 54,
+	["Awp"] = 99,
+	["Scout"] = 92,
+	["Revolver"] = 97,
+	--["Pistol"] = 92,
+    --["Rifle"] = 92,
+    --["Desert Eagle"] = 92,
+    --["Submachine gun"] = 92,
+    --["Heavy"] = 92,
+    --["Shotgun"] = 92,
+}
+
 --/references to menu controls
 local reference = {
 	damage = ui.reference("RAGE", "Aimbot", "Minimum damage"),
@@ -123,7 +137,7 @@ end
 		return
 	end
 	
-	if entity.get_prop(enemy_entindex, "m_iHealth") < 92 then
+	if entity.get_prop(enemy_entindex, "m_iHealth") < health[key] then
 		if _debug then client.log("delay_100: enemy is baimable") end
 		ui.set(reference.delay, false)
 		return
