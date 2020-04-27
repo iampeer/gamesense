@@ -355,7 +355,7 @@ ui.set_callback(controls.enabled, menu_callback)
 ui.set_callback(controls.selected_weapon, menu_callback)
 
 --/handle updating weapon settings according to wielded weapon
-client.set_event_callback("setup_command", function()
+client.set_event_callback("run_command", function()
     if not ui.get(controls.enabled) then return end
     local local_player = entity.get_local_player()
 
