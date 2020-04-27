@@ -390,6 +390,10 @@ client.set_event_callback("net_update_end", function()
     if not ui.get(controls.enabled) then return end
     local local_player = entity.get_local_player()
 
+    if entity.get_prop(local_player, "m_lifeState") ~= 0 or not local_player then
+	return
+    end
+
     local player_weapon = entity.get_player_weapon(local_player)
     local weapon_index = bit.band(65535, entity.get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
