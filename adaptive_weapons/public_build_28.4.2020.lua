@@ -413,7 +413,13 @@ client.set_event_callback("paint", function(ctx)
 		return
     end
     
-    local temp = weapon_info[key]
+    local temp 
+
+    if weapon_info[key] then
+        temp = weapon_info[key]
+    else
+        return
+    end
 
     --/make sure to not do visibility calculations when 'damage' and 'visible'
     --/are set to the same value
