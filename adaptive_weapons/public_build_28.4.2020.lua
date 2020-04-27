@@ -135,6 +135,10 @@ local get_weapon_names = function(tbl)
 end
 get_weapon_names(weapon_indexes)
 
+local in_air = function(ent)
+    return (bit.band(entity.get_prop(ent, "m_fFlags"), 1) == 0)
+end
+
 --/get active weapon string 
 --/example: returns 'Auto' when wielding either weapon idx 11 or 38
 local get_key = function(val)
@@ -155,6 +159,7 @@ local controls = {
     selected_weapon = ui.new_combobox("LUA", "A", "Selected weapon", weapon_names),
     indicators = ui.new_checkbox("LUA", "A", "Display override indicators"),
     key_damage = ui.new_hotkey("LUA", "A", "Hotkey: damage override", false),
+    key_hitbox = ui.new_hotkey("LUA", "A", "Hotkey: hitbox override", false),
     key_head = ui.new_hotkey("LUA", "A", "Hotkey: force head", false)
 }
 
@@ -164,6 +169,7 @@ local generate_weapon_controls = function()
         weapon_info[name] = {
             selection = ui.new_combobox("LUA", "A", "[" .. name .. "] Target selection", {"Cycle"," Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
             hitbox = ui.new_multiselect("LUA", "A", "[" .. name .. "] Target hitbox", {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+            hitbox_override = ui.new_multiselect("LUA", "A", "[" .. name .. "] Target hitbox override", {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
             multipoint = ui.new_multiselect("LUA", "A", "[" .. name .. "] Multi-point", {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
             multipoint_scale = ui.new_slider("LUA", "A", "[" .. name .. "] Multi-point scale", 24, 100, 50, true, "%", 1, labels.mp),
             dynamic = ui.new_checkbox("LUA", "A", "[" .. name .. "] Dynamic multi-point"),
@@ -172,7 +178,10 @@ local generate_weapon_controls = function()
             hit_chance = ui.new_slider("LUA", "A", "[" .. name .. "] Minimum hit chance", 0, 100, 55, true, "%", 1, labels.hitchance),
             damage = ui.new_slider("LUA", "A", "[" .. name .. "] Autowall damage", 0, 124, 15, true, "\n", 1, labels["damage"]),
             visible = ui.new_slider("LUA", "A", "[" .. name .. "] Minimum damage", 0, 124, 15, true, "\n", 1, labels["damage"]),
-            damage_override = ui.new_slider("LUA", "A", "[" .. name .. "] Override damage", 0, 124, 15, true, "\n", 1, labels["damage"]),
+            damage_override = ui.new_slider("LUA", "A", "[" .. name .. "] Override minimum damage", 0, 124, 15, true, "\n", 1, labels["damage"]),
+            in_air = ui.new_checkbox("LUA", "A", "[" .. name .. "] Customize values in-air"),
+            hit_chance_air = ui.new_slider("LUA", "A", "[" .. name .. "] In-air hit chance", 0, 100, 34, true, "%", 1, labels.hitchance),
+            damage_air = ui.new_slider("LUA", "A", "[" .. name .. "] In-air minimum damage", 0, 124, 20, true, "\n", 1, labels["damage"]),
             boost = ui.new_combobox("LUA", "A", "[" .. name .. "] Accuracy boost", { "Off", "Low", "Medium", "High", "Maximum" }),
             delay = ui.new_checkbox("LUA", "A", "[" .. name .. "] Delay shot"),
             stop = ui.new_checkbox("LUA", "A", "[" .. name .. "] Quick stop"),
@@ -280,17 +289,35 @@ local update_settings = function(weapon)
 	    if name == "hitbox" then
             --/if "Hotkey: force head" is active
             --/set hitbox to 'Head'
-            if ui.get(controls.key_head) then ui.set(ref, "Head") end
+            if ui.get(controls.key_head) then
+                ui.set(ref, "Head")
+            elseif ui.get(controls.key_damage) then
+                --/if 'Hotkey: hitbox override' is active
+                --/set hitboxes to value in 'target hitbox override'
+                ui.set(ref, ui.get(active["hitbox_override"]))
+            end
         end
 		
         if name == "damage" then
-            if visible and not ui.get(controls.key_damage) then
+            if in_air(entity.get_local_player()) and ui.get(active["in_air"]) then
+                --/if local player is in air and customize values in-air is enabled
+                --/set hit chance to value in 'minimum damage in-air'
+                ui.set(ref, ui.get(active["damage_air"]))
+            elseif visible and not ui.get(controls.key_damage) then
                 --/if enemy is visible and 'Hotkey: damage override' not is active
                 ui.set(ref, ui.get(active["visible"]))
             elseif ui.get(controls.key_damage) then
                 --/if 'Hotkey: damage override' is active
                 --/set minimum damage to value in 'override damage'
                 ui.set(ref, ui.get(active["damage_override"]))
+            end
+        end
+
+        if name == "hitchance" then
+            if in_air(entity.get_local_player()) and ui.get(active["in_air"]) then
+                --/if local player is in air and customize values in-air is enabled
+                --/set hit chance to value in 'hit chance in-air'
+                ui.set(ref, ui.get(active["hit_chance_air"]))
             end
         end
     end
@@ -318,10 +345,12 @@ local menu_callback = function(e, menu_call)
                     local set_element = true
 
                     local mp = ui.get(mode["multipoint"])
-                    local stop = ui.get(mode["stop"])
                     local baim = ui.get(mode["baim"])
+                    local stop = ui.get(mode["stop"])
+                    local air = ui.get(mode["in_air"])
 
                     if not next(mp) and (active and j == "dynamic" or j == "multipoint_scale") then set_element = false end
+                    if not air and (active and j == "hit_chance_air" or j == "damage_air") then set_element = false end
                     if not stop and (active and j == "stop_options") then set_element = false end
                     if not baim and (active and j == "baim_disablers" or j == "baim_unduck" or j == "baim_onpeek") then set_element = false end
 
@@ -342,12 +371,14 @@ local menu_callback = function(e, menu_call)
         [controls.selected_weapon] = not state,
         [controls.indicators] = not state,
         [controls.key_damage] = not state,
+        [controls.key_hitbox] = not state,
         [controls.key_head] = not state
     })
 end
 
 menu_callback(controls.enabled)
 bind_callback(weapon_info, menu_callback, "multipoint")
+bind_callback(weapon_info, menu_callback, "in_air")
 bind_callback(weapon_info, menu_callback, "stop")
 bind_callback(weapon_info, menu_callback, "baim")
 
@@ -355,7 +386,7 @@ ui.set_callback(controls.enabled, menu_callback)
 ui.set_callback(controls.selected_weapon, menu_callback)
 
 --/handle updating weapon settings according to wielded weapon
-client.set_event_callback("run_command", function()
+client.set_event_callback("net_update_end", function()
     if not ui.get(controls.enabled) then return end
     local local_player = entity.get_local_player()
 
@@ -366,11 +397,10 @@ client.set_event_callback("run_command", function()
     local temp = weapon_info[key]
 
     fix_multiselect(temp["hitbox"], "Head")
+    fix_multiselect(temp["hitbox_override"], "Head")
 
-    --if key ~= cached_key then
-        update_settings(key)
-        cached_key = key
-    --end
+    update_settings(key)
+    cached_key = key
 end)
 
 --/handle player visibility for visible minimum damage
@@ -408,10 +438,13 @@ client.set_event_callback("paint", function(ctx)
     if not ui.get(controls.enabled) then return end
     if not ui.get(controls.indicators) then return end
 
-    if ui.get(controls.key_damage) then
-        renderer.indicator(150, 200, 60, 255, "DMG")
-    end
     if ui.get(controls.key_head) then
         renderer.indicator(255, 50, 50, 255, "HEAD")
     end 
+    if ui.get(controls.key_damage) then
+        renderer.indicator(150, 200, 60, 255, "DMG")
+    end
+    if ui.get(controls.key_hitbox) then
+        renderer.indicator(150, 200, 60, 255, "HB")
+    end
 end)
