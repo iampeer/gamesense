@@ -291,7 +291,7 @@ local update_settings = function(weapon)
             --/set hitbox to 'Head'
             if ui.get(controls.key_head) then
                 ui.set(ref, "Head")
-            elseif ui.get(controls.key_damage) then
+            elseif ui.get(controls.key_hitbox) then
                 --/if 'Hotkey: hitbox override' is active
                 --/set hitboxes to value in 'target hitbox override'
                 ui.set(ref, ui.get(active["hitbox_override"]))
