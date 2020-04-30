@@ -1,34 +1,10 @@
---[[
-    MIT License
+-- file:         adaptive.lua
+-- desc:         allows having settings for multiple weapon groups within one configuration
+-- author:       peer <peer#0369>
+-- version:      1.0
+-- last update:  30.04.2020
 
-    Copyright (c) peer 2020
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-]]--
-
---contact <peer#0369>
---version 1.0
---last update 29.04.2020
---allows having settings for multiple weapon groups within one configuration
-
---credits: salvatore for sure, nmchris probably, sapphyrus probably, aviarita probably and probably some others (not sure who'm)
---if you see any syntax you've credit to, please contact me and i will refer to you
+--credits: salvatore, nmchris, sapphyrus, aviarita and probably some others
 
 --/change these to have a different location in your menu
 local menu_loc = { "LUA", "A" }
@@ -82,6 +58,13 @@ local function vec2_dist(f_x, f_y, t_x, t_y)
     local delta_x, delta_y = f_x - t_x, f_y - t_y
     return math.sqrt(delta_x * delta_x + delta_y * delta_y)
 end
+---/check if local player is fakeducking
+local function is_fd()
+    if ui.get(ui.reference("RAGE", "Other", "Duck peek assist")) then
+        return true
+    end
+    return false
+end
 --#endregion /helpers
 --#region variablies and constants
 local weapon_info = {}
@@ -115,32 +98,32 @@ local weapon_indexes = {
     Deagle      = { 1 },
     Pistol      = { 2, 3, 4, 30, 32, 36, 61, 63 },
     Zeus        = { 31 },
-    --Rifle = { 7, 8, 10, 13, 16, 39, 60 },
-    --Submachine gun = { 17, 19, 24, 26, 33, 34 },
-    --Heavy = { 14, 28},
-    --Shotgun = { 25, 27, 29, 35 },
+    --Rifle     = { 7, 8, 10, 13, 16, 39, 60 },
+    --SMG       = { 17, 19, 24, 26, 33, 34 },
+    --Heavy     = { 14, 28},
+    --Shotgun   = { 25, 27, 29, 35 },
 }
 ---#region menu references
 local multipoint, _, mp_strenght = ui.reference("RAGE", "Aimbot", "Multi-point")
 local reference = {
-    selection = ui.reference("RAGE", "Aimbot", "Target selection"),
-    hitbox = ui.reference("RAGE", "Aimbot", "Target hitbox"),
-    multipoint = multipoint,
-    multipoint_scale = ui.reference("RAGE", "Aimbot", "Multi-point scale"),
-    dynamic = ui.reference("RAGE", "Aimbot", "Dynamic multi-point"),
-    prefersafe = ui.reference("RAGE", "Aimbot", "Prefer safe point"),
-    forcesafe_limbs = ui.reference("RAGE", "Aimbot", "Force safe point on limbs"),
-    hit_chance = ui.reference("RAGE", "Aimbot", "Minimum hit chance"),
-    damage = ui.reference("RAGE", "Aimbot", "Minimum damage"),
-    boost = ui.reference("RAGE", "Other", "Accuracy boost"),
-    delay = ui.reference("RAGE", "Other", "Delay shot"),
-    stop = ui.reference("RAGE", "Other", "Quick stop"),
-    stop_options = ui.reference("RAGE", "Other", "Quick stop options"),
-    baim = ui.reference("RAGE", "Other", "Prefer body aim"),
-    baim_disablers = ui.reference("RAGE", "Other", "Prefer body aim disablers"),
-    baim_unduck = ui.reference("RAGE", "Other", "Delay shot on unduck"),
-    baim_onpeek = ui.reference("RAGE", "Other", "Delay shot on peek"),
-    doubletap = ui.reference("RAGE", "Other", "Double tap")
+    selection           = ui.reference("RAGE", "Aimbot", "Target selection"),
+    hitbox              = ui.reference("RAGE", "Aimbot", "Target hitbox"),
+    multipoint          = multipoint,
+    multipoint_scale    = ui.reference("RAGE", "Aimbot", "Multi-point scale"),
+    dynamic             = ui.reference("RAGE", "Aimbot", "Dynamic multi-point"),
+    prefersafe          = ui.reference("RAGE", "Aimbot", "Prefer safe point"),
+    forcesafe_limbs     = ui.reference("RAGE", "Aimbot", "Force safe point on limbs"),
+    hit_chance          = ui.reference("RAGE", "Aimbot", "Minimum hit chance"),
+    damage              = ui.reference("RAGE", "Aimbot", "Minimum damage"),
+    boost               = ui.reference("RAGE", "Other", "Accuracy boost"),
+    delay               = ui.reference("RAGE", "Other", "Delay shot"),
+    stop                = ui.reference("RAGE", "Other", "Quick stop"),
+    stop_options        = ui.reference("RAGE", "Other", "Quick stop options"),
+    baim                = ui.reference("RAGE", "Other", "Prefer body aim"),
+    baim_disablers      = ui.reference("RAGE", "Other", "Prefer body aim disablers"),
+    baim_unduck         = ui.reference("RAGE", "Other", "Delay shot on unduck"),
+    baim_onpeek         = ui.reference("RAGE", "Other", "Delay shot on peek"),
+    doubletap           = ui.reference("RAGE", "Other", "Double tap")
 }
 ---#endregion /menu references
 ---#region new menu controls
@@ -160,7 +143,7 @@ local controls = {
 local function generate_weapon_controls()
     for name in pairs(weapon_indexes) do 
         weapon_info[name] = {
-            selection           = ui.new_combobox(menu_loc[1], menu_loc[2], string.format("[%s] Target selection", name), {"Cycle"," Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
+            selection           = ui.new_combobox(menu_loc[1], menu_loc[2], string.format("[%s] Target selection", name), {"Cycle","Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
             hitbox              = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Target hitbox", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
             hitbox_override     = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Target hitbox override", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
             multipoint          = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Multi-point", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
@@ -288,7 +271,10 @@ local function update_settings(weapon)
             end
         end
         if name == "damage" then
-            if in_air(entity.get_local_player()) and ui.get(active.in_air) then
+            if is_fd() then
+                --/if local player is fakeducking use autowall damage to prevent damage slider from going crazy
+                ui.set(ref, ui.get(active.damage))
+            elseif in_air(entity.get_local_player()) and ui.get(active.in_air) then
                 --/if local player is in air and 'customize values in-air is' enabled
                 --/set minimum damage to value in 'minimum damage in-air'
                 ui.set(ref, ui.get(active.damage_air))
