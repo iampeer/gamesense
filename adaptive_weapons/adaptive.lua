@@ -390,7 +390,7 @@ client.set_event_callback("net_update_end", function()
     cached_key = active_key
 end)
 
-client.set_event_callback("paint", function(ctx)
+client.set_event_callback("paint", function()
     if not ui.get(controls.enabled) then return end
 	if entity.get_prop(entity.get_local_player(), "m_lifeState") ~= 0 then	
 		visible = false
@@ -402,7 +402,7 @@ client.set_event_callback("paint", function(ctx)
     local temp = weapon_info[active_key]
 
     if temp ~= nil then
-        local enemy_visible, enemy_entindex = check_fov(ctx)
+        local enemy_visible, enemy_entindex = check_fov()
         if enemy_entindex == nil then return end
         if enemy_visible and enemy_entindex ~= nil and cached_target ~= enemy_entindex then 
             cached_target = enemy_entindex
