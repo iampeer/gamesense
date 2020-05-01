@@ -271,10 +271,10 @@ local function update_settings(weapon)
             end
         end
         if name == "damage" then
-            if is_fd() then
+            if is_fd() and not ui.get(controls.key_damage) then
                 --/if local player is fakeducking use autowall damage to prevent damage slider from going crazy
                 ui.set(ref, ui.get(active.damage))
-            elseif in_air(entity.get_local_player()) and ui.get(active.in_air) then
+            elseif in_air(entity.get_local_player()) and ui.get(active.in_air) and not ui.get(controls.key_damage) then
                 --/if local player is in air and 'customize values in-air is' enabled
                 --/set minimum damage to value in 'minimum damage in-air'
                 ui.set(ref, ui.get(active.damage_air))
@@ -306,10 +306,10 @@ local function draw_indicators()
         renderer.indicator(255, 50, 50, 255, "HEAD")
     end 
     if ui.get(controls.key_damage) then
-        renderer.indicator(150, 200, 60, 255, "DMG")
+        renderer.indicator(123, 193, 21, 255, "DMG")
     end
     if ui.get(controls.key_hitbox) then
-        renderer.indicator(150, 200, 60, 255, "HB")
+        renderer.indicator(123, 193, 21, 255, "HB")
     end
 end
 --#endregion /script functionality
