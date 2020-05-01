@@ -1,96 +1,38 @@
--- file:         adaptive.lua
--- desc:         allows having settings for multiple weapon groups within one configuration
--- author:       peer <peer#0369>
--- version:      1.0
--- last update:  30.04.2020
+-- file:    adaptive.lua
+-- version: 1.0
+-- author:  peer <peer#0369>
+-- updated: 01/05/2020 (dd/mm/yyyy)
+-- desc:    allows you having settings for multiple weapon groups within one configuration
 
---credits: salvatore, nmchris, sapphyrus, aviarita and probably some others
+-- credits: Salvatore, NmChris, Sapphyrus, Aviarita and most likely some others
 
---/change these to have a different location in your menu
-local menu_loc = { "LUA", "A" }
+--/location on Gamesense menu
+local menu =  { "LUA", "A" }
 
---#region helpers
----/execute function multiple times according data given in `list`
-local function multi_exec(func, list)
-    if func == nil then return end
-    
-    for ref, val in pairs(list) do
-        func(ref, val)
-    end
-end
----/check is a table contains a specific value
----/returns true if true
-local function contains(tab, val)
-    for i = 1, #tab do
-        if tab[i] == val then
-            return true
-        end
-    end
-    
-    return false
-end
----/fill multiselects which require atleast one value with the 
----/value given as `value`
-local function fix_multiselect(multiselect, value)
-    local number = ui.get(multiselect)
-    if #number == 0 then
-        ui.set(multiselect, value)
-    end
-end
----/get items from tables and put their keys in a seperate table
-local function get_items(tbl)
-    local items = {}
-    local n = 0
-
-    for k,v in pairs(tbl) do
-        n = n + 1
-        items[n]=k
-    end
-    table.sort(items)
-    return items
-end
----/check if specific entity is in air
-local function in_air(ent)
-    return (bit.band(entity.get_prop(ent, "m_fFlags"), 1) == 0)
-end
----/convert vector to usable values
-local function vec2_dist(f_x, f_y, t_x, t_y)
-    local delta_x, delta_y = f_x - t_x, f_y - t_y
-    return math.sqrt(delta_x * delta_x + delta_y * delta_y)
-end
----/check if local player is fakeducking
-local function is_fd()
-    if ui.get(ui.reference("RAGE", "Other", "Duck peek assist")) then
-        return true
-    end
-    return false
-end
---#endregion /helpers
---#region variablies and constants
+--#region vars & consts
 local weapon_info = {}
-local active_key = "Other"
+
+local active_key = "Global"
 local cached_key
 
-local cached_target
 local visible = false
----/overrides for slider labels
+local cached_target
+
 local labels = {
-    damage = {[0] = "Auto"},
-    hit_chance = {[0] = "Off"},
-    mp = {[24] = "Auto"}
+    damage = { [0] = "Auto" },
+    hit_chance = { [0] = "Off" },
+    multipoint = { [24] = "Auto" }
 }
----/generate labels for HP+1-HP+126
+
 local function generate_damage_labels()
-    for i = 1, 26 do 
-        labels.damage[100 + i] = "HP + " .. i
+    for i = 1, 26 do
+        labels.damage[100 + i] = string.format("HP + %s", i)
     end
 end
 generate_damage_labels()
----/weapon groups where controls will be rendered for and will have the script
----/change aimbot settings to accordingly
----/comment or uncomment to disable/enable weapon groups
+
 local weapon_indexes = {
-    Other       = { }, --/all other weapons: non selected and knifes, zeus, grenades etc
+    Global       = { }, --/all other weapons: non selected and knifes, zeus, grenades etc
     AWP         = { 9 },
     Auto        = { 11, 38 },
     Scout       = { 40 },
@@ -103,80 +45,74 @@ local weapon_indexes = {
     --Heavy     = { 14, 28},
     --Shotgun   = { 25, 27, 29, 35 },
 }
----#region menu references
-local multipoint, _, mp_strenght = ui.reference("RAGE", "Aimbot", "Multi-point")
-local reference = {
-    selection           = ui.reference("RAGE", "Aimbot", "Target selection"),
-    hitbox              = ui.reference("RAGE", "Aimbot", "Target hitbox"),
-    multipoint          = multipoint,
-    multipoint_scale    = ui.reference("RAGE", "Aimbot", "Multi-point scale"),
-    dynamic             = ui.reference("RAGE", "Aimbot", "Dynamic multi-point"),
-    prefersafe          = ui.reference("RAGE", "Aimbot", "Prefer safe point"),
-    forcesafe_limbs     = ui.reference("RAGE", "Aimbot", "Force safe point on limbs"),
-    hit_chance          = ui.reference("RAGE", "Aimbot", "Minimum hit chance"),
-    damage              = ui.reference("RAGE", "Aimbot", "Minimum damage"),
-    boost               = ui.reference("RAGE", "Other", "Accuracy boost"),
-    delay               = ui.reference("RAGE", "Other", "Delay shot"),
-    stop                = ui.reference("RAGE", "Other", "Quick stop"),
-    stop_options        = ui.reference("RAGE", "Other", "Quick stop options"),
-    baim                = ui.reference("RAGE", "Other", "Prefer body aim"),
-    baim_disablers      = ui.reference("RAGE", "Other", "Prefer body aim disablers"),
-    baim_unduck         = ui.reference("RAGE", "Other", "Delay shot on unduck"),
-    baim_onpeek         = ui.reference("RAGE", "Other", "Delay shot on peek"),
-    doubletap           = ui.reference("RAGE", "Other", "Double tap")
-}
----#endregion /menu references
----#region new menu controls
----/global controls
-local controls = {
-    active          = "Other",
-    visible         = false,
-    enabled         = ui.new_checkbox(menu_loc[1], menu_loc[2], "Enable adaptive weapons"),
-    selected_weapon = ui.new_combobox(menu_loc[1], menu_loc[2], "Selected weapon", get_items(weapon_indexes)),
-    indicators      = ui.new_checkbox(menu_loc[1], menu_loc[2], "Display override indicators"),
-    key_damage      = ui.new_hotkey(menu_loc[1], menu_loc[2], "Hotkey: damage override", false),
-    key_hitbox      = ui.new_hotkey(menu_loc[1], menu_loc[2], "Hotkey: hitbox override", false),
-    key_head        = ui.new_hotkey(menu_loc[1], menu_loc[2], "Hotkey: force head", false),
-    update_misc     = ui.new_checkbox(menu_loc[1], menu_loc[2], "Update settings for misc weapons")
-}
----/controls for each weapon group in weapon_indexes
-local function generate_weapon_controls()
-    for name in pairs(weapon_indexes) do 
-        weapon_info[name] = {
-            selection           = ui.new_combobox(menu_loc[1], menu_loc[2], string.format("[%s] Target selection", name), {"Cycle","Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
-            hitbox              = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Target hitbox", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
-            hitbox_override     = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Target hitbox override", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
-            multipoint          = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Multi-point", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
-            multipoint_scale    = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] Multi-point scale", name), 24, 100, 50, true, "%", 1, labels.mp),
-            dynamic             = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Dynamic multi-point", name)),
-            prefersafe          = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Prefer safe point", name)),
-            forcesafe_limbs     = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Force safe point on limbs", name)),
-            hit_chance          = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] Minimum hit chance", name), 0, 100, 55, true, "%", 1, labels.hit_chance),
-            damage              = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] Autowall damage", name), 0, 124, 15, true, "\n", 1, labels["damage"]),
-            visible             = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] Minimum damage", name), 0, 124, 15, true, "\n", 1, labels["damage"]),
-            damage_override     = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] Override minimum damage", name), 0, 124, 15, true, "\n", 1, labels["damage"]),
-            in_air              = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Customize values in-air", name)),
-            hit_chance_air      = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] In-air hit chance", name), 0, 100, 34, true, "%", 1, labels.hit_chance),
-            damage_air          = ui.new_slider(menu_loc[1], menu_loc[2], string.format("[%s] In-air minimum damage", name), 0, 124, 20, true, "\n", 1, labels["damage"]),
-            boost               = ui.new_combobox(menu_loc[1], menu_loc[2], string.format("[%s] Accuracy boost", name), { "Off", "Low", "Medium", "High", "Maximum" }),
-            delay               = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Delay shot", name)),
-            stop                = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Quick stop", name)),
-            stop_options        = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Quick stop options", name), { "Early", "Slow motion", "Duck", "Move between shots", "Ignore molotov" }),
-            baim                = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Prefer body aim", name)),
-            baim_disablers      = ui.new_multiselect(menu_loc[1], menu_loc[2], string.format("[%s] Prefer body aim disablers", name), { "Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage" }),
-            baim_unduck         = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Delay shot on unduck", name)),
-            baim_onpeek         = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Delay shot on peek", name)),
-            doubletap           = ui.new_checkbox(menu_loc[1], menu_loc[2], string.format("[%s] Double tap", name)),
- 		}
+
+--#endregion /vars & consts
+
+--#region helpers
+local function contains(tab, val)
+    for i = 1, #tab do
+        if tab[i] == val then
+            return true
+        end
+    end
+    
+    return false
+end
+
+local function multi_exec(func, list)
+    if func == nil then return end
+    
+    for ref, val in pairs(list) do
+        func(ref, val)
     end
 end
-generate_weapon_controls()
----#endregion /new menu controls
---#endregion /variables and constants
---#region player visibility handling
----/get all players and their locations, enemy parameter is a boolean
----/which you should set to true if you only want to scan for enemies
----/code kinda pasted from code in Sigma's adaptive weapons
+
+local function fix_multiselect(multiselect, value)
+    local number = ui.get(multiselect)
+    if #number == 0 then
+        ui.set(multiselect, value)
+    end
+end
+
+local function get_items(tbl)
+    local items = {}
+    local n = 0
+
+    for k,v in pairs(tbl) do
+        n = n + 1
+        items[n]=k
+    end
+    table.sort(items)
+    return items
+end
+
+local function get_key(val)
+    for k, v in pairs(weapon_indexes) do
+        if contains(v, val) then
+            return k
+        end
+    end
+    return "Global"
+end
+
+local function vec2_dist(f_x, f_y, t_x, t_y)
+    local delta_x, delta_y = f_x - t_x, f_y - t_y
+    return math.sqrt(delta_x * delta_x + delta_y * delta_y)
+end
+
+local function in_air()
+    return (bit.band(entity.get_prop(entity.get_local_player(), "m_fFlags"), 1) == 0)
+end
+
+local function in_fd()
+    if ui.get(ui.reference("RAGE", "Other", "Duck peek assist")) then
+        return true
+    end
+    return false
+end
+--#endregion
+
+--#region player checking
 local function get_all_player_locations(w, h, enemy)
 	local indexes = {}
 	local positions = {}
@@ -203,8 +139,7 @@ local function get_all_player_locations(w, h, enemy)
 	
 	return indexes, positions
 end
----/check if any players returned from `get_all_player_locations`
----/are inside of the given fov
+
 local function check_fov()
     local w, h = client.screen_size()
     local sx, sy = w * 0.5, h * 0.5
@@ -231,7 +166,7 @@ local function check_fov()
 
     return closest_fov > fov_limit, closest_entindex
 end
----/check if there's a visible hitbox for targeted enemy
+
 local can_see = function(ent)
     for i=0, 18 do
         if client.visible(entity.hitbox_position(ent, i)) then
@@ -240,79 +175,83 @@ local can_see = function(ent)
     end
     return false
 end
---#endregion /player visibility handling
---#region script functionality
----/get active weapon string 
----/example: returns 'Auto' when wielding either weapon idx 11 or 38
-local function get_key(val)
-    for k, v in pairs(weapon_indexes) do
-        if contains(v, val) then
-            return k
-        end
+--#endregion
+
+--#region references
+local   multipoint, 
+        _, 
+        mp_strenght     = ui.reference("RAGE", "Aimbot", "Multi-point")
+
+local reference = {
+    selection           = ui.reference("RAGE", "Aimbot", "Target selection"),
+    hitbox              = ui.reference("RAGE", "Aimbot", "Target hitbox"),
+    multipoint          = multipoint,
+    multipoint_scale    = ui.reference("RAGE", "Aimbot", "Multi-point scale"),
+    dynamic             = ui.reference("RAGE", "Aimbot", "Dynamic multi-point"),
+    prefersafe          = ui.reference("RAGE", "Aimbot", "Prefer safe point"),
+    forcesafe_limbs     = ui.reference("RAGE", "Aimbot", "Force safe point on limbs"),
+    hit_chance          = ui.reference("RAGE", "Aimbot", "Minimum hit chance"),
+    damage              = ui.reference("RAGE", "Aimbot", "Minimum damage"),
+    boost               = ui.reference("RAGE", "Other", "Accuracy boost"),
+    delay               = ui.reference("RAGE", "Other", "Delay shot"),
+    stop                = ui.reference("RAGE", "Other", "Quick stop"),
+    stop_options        = ui.reference("RAGE", "Other", "Quick stop options"),
+    baim                = ui.reference("RAGE", "Other", "Prefer body aim"),
+    baim_disablers      = ui.reference("RAGE", "Other", "Prefer body aim disablers"),
+    baim_unduck         = ui.reference("RAGE", "Other", "Delay shot on unduck"),
+    baim_onpeek         = ui.reference("RAGE", "Other", "Delay shot on peek"),
+    doubletap           = ui.reference("RAGE", "Other", "Double tap")
+}
+
+--#endregion /references
+
+--#region controls
+local controls = {
+    active          = "Global", --/default selected weapon group
+    visible         = false,
+    enabled         = ui.new_checkbox(menu[1], menu[2], "Enable adaptive weapons"),
+    selected_weapon = ui.new_combobox(menu[1], menu[2], "Selected weapon", get_items(weapon_indexes)),
+    indicators      = ui.new_checkbox(menu[1], menu[2], "Display override indicators"),
+    update_misc     = ui.new_checkbox(menu[1], menu[2], "Update settings for misc weapons"),
+    key_damage      = ui.new_hotkey(menu[1], menu[2], "Hotkey: damage override", false),
+    key_hitbox      = ui.new_hotkey(menu[1], menu[2], "Hotkey: hitbox override", false),
+    key_head        = ui.new_hotkey(menu[1], menu[2], "Hotkey: force head", false)
+}
+
+local function generate_weapon_controls()
+    for name in pairs(weapon_indexes) do 
+        weapon_info[name] = {
+            selection           = ui.new_combobox(menu[1], menu[2], string.format("[%s] Target selection", name), {"Cycle","Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
+            hitbox              = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Target hitbox", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+            hitbox_override     = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Target hitbox override", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+            multipoint          = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Multi-point", name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+            multipoint_scale    = ui.new_slider(menu[1], menu[2], string.format("[%s] Multi-point scale", name), 24, 100, 50, true, "%", 1, labels.multipoint),
+            dynamic             = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Dynamic multi-point", name)),
+            prefersafe          = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Prefer safe point", name)),
+            forcesafe_limbs     = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Force safe point on limbs", name)),
+            hit_chance          = ui.new_slider(menu[1], menu[2], string.format("[%s] Minimum hit chance", name), 0, 100, 55, true, "%", 1, labels.hit_chance),
+            damage              = ui.new_slider(menu[1], menu[2], string.format("[%s] Minimum damage damage", name), 0, 124, 15, true, "\n", 1, labels.damage),
+            visible             = ui.new_slider(menu[1], menu[2], string.format("[%s] Visible minimum damage", name), 0, 124, 15, true, "\n", 1, labels.damage),
+            damage_override     = ui.new_slider(menu[1], menu[2], string.format("[%s] Override minimum damage", name), 0, 124, 15, true, "\n", 1, labels.damage),
+            in_air              = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Customize values in-air", name)),
+            hit_chance_air      = ui.new_slider(menu[1], menu[2], string.format("[%s] In-air hit chance", name), 0, 100, 34, true, "%", 1, labels.hit_chance),
+            damage_air          = ui.new_slider(menu[1], menu[2], string.format("[%s] In-air minimum damage", name), 0, 124, 20, true, "\n", 1, labels.damage),
+            boost               = ui.new_combobox(menu[1], menu[2], string.format("[%s] Accuracy boost", name), { "Off", "Low", "Medium", "High", "Maximum" }),
+            delay               = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot", name)),
+            stop                = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Quick stop", name)),
+            stop_options        = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Quick stop options", name), { "Early", "Slow motion", "Duck", "Move between shots", "Ignore molotov" }),
+            baim                = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Prefer body aim", name)),
+            baim_disablers      = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Prefer body aim disablers", name), { "Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage" }),
+            baim_unduck         = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot on unduck", name)),
+            baim_onpeek         = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot on peek", name)),
+            doubletap           = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Double tap", name)),
+ 		}
     end
-    return "Other"
 end
----/update settings according to currently wielded weapon
-local function update_settings(weapon)
-    if not ui.get(controls.enabled) then return end
-    local active = weapon_info[weapon]
-    --/update aimbot settings according to settings set in the script
-    for name, ref in pairs(reference) do
-        ui.set(ref, ui.get(active[name]))
-	    if name == "hitbox" then
-            --/if "Hotkey: force head" is active
-            --/set hitbox to 'Head'
-            if ui.get(controls.key_head) then
-                ui.set(ref, "Head")
-            elseif ui.get(controls.key_hitbox) then
-                --/if 'Hotkey: hitbox override' is active
-                --/set hitboxes to value in 'target hitbox override'
-                ui.set(ref, ui.get(active.hitbox_override))
-            end
-        end
-        if name == "damage" then
-            if is_fd() and not ui.get(controls.key_damage) then
-                --/if local player is fakeducking use autowall damage to prevent damage slider from going crazy
-                ui.set(ref, ui.get(active.damage))
-            elseif in_air(entity.get_local_player()) and ui.get(active.in_air) and not ui.get(controls.key_damage) then
-                --/if local player is in air and 'customize values in-air is' enabled
-                --/set minimum damage to value in 'minimum damage in-air'
-                ui.set(ref, ui.get(active.damage_air))
-            elseif visible and not ui.get(controls.key_damage) then
-                --/if enemy is visible and 'Hotkey: damage override' not is active
-                --/and `visible` is not the same as `damage`
-                --/set minimum damage to value in `visible`
-                if ui.get(active.visible) ~= ui.get(active.damage) then
-                    ui.set(ref, ui.get(active.visible))
-                end
-            elseif ui.get(controls.key_damage) then
-                --/if 'Hotkey: damage override' is active
-                --/set minimum damage to value in 'override damage'
-                ui.set(ref, ui.get(active.damage_override))
-            end
-        end
-        if name == "hit_chance" then
-            if in_air(entity.get_local_player()) and ui.get(active.in_air) then
-                --/if local player is in air and `customize values in-air` is enabled
-                --/set hit chance to value in 'hit chance in-air'
-                ui.set(ref, ui.get(active.hit_chance_air))
-            end
-        end
-    end
-end
----/drawing indicators
-local function draw_indicators()
-    if ui.get(controls.key_head) then
-        renderer.indicator(255, 50, 50, 255, "HEAD")
-    end 
-    if ui.get(controls.key_damage) then
-        renderer.indicator(123, 193, 21, 255, "DMG")
-    end
-    if ui.get(controls.key_hitbox) then
-        renderer.indicator(123, 193, 21, 255, "HB")
-    end
-end
---#endregion /script functionality
+generate_weapon_controls()
+
+--#endregion controls
+
 --#region control visibility handling
 ---/full credits to Salvatore
 ---/also thanks for the theme, it's pretty
@@ -323,6 +262,7 @@ local function bind_callback(list, callback, elem)
         end
     end
 end
+
 local function menu_callback(e, menu_call)
     local setup_controls = function(list, element, vis)
         for k, v in pairs(list) do
@@ -348,11 +288,14 @@ local function menu_callback(e, menu_call)
             end
         end
     end
+
     local state = not ui.get(controls.enabled)
     if e == nil then state = true end
+
     if menu_call == nil then
         setup_controls(weapon_info, ui.get(controls.selected_weapon), not state)
     end
+
     multi_exec(ui.set_visible, {
         [controls.selected_weapon] = not state,
         [controls.indicators] = not state,
@@ -362,6 +305,7 @@ local function menu_callback(e, menu_call)
         [controls.update_misc] = not state
     })
 end
+
 menu_callback(controls.enabled)
 bind_callback(weapon_info, menu_callback, "multipoint")
 bind_callback(weapon_info, menu_callback, "in_air")
@@ -370,8 +314,59 @@ bind_callback(weapon_info, menu_callback, "baim")
 ui.set_callback(controls.enabled, menu_callback)
 ui.set_callback(controls.selected_weapon, menu_callback)
 --#endregion /control visibility handling
+
+--#region main functionality
+local function update_settings(weapon)
+    if not ui.get(controls.enabled) then return end
+    local active = weapon_info[weapon]
+
+    for name, ref in pairs(reference) do
+        ui.set(ref, ui.get(active[name]))
+
+	    if name == "hitbox" then
+            if ui.get(controls.key_head) then
+                ui.set(ref, "Head")
+            elseif ui.get(controls.key_hitbox) then
+                ui.set(ref, ui.get(active.hitbox_override))
+            end
+        end
+
+        if name == "damage" then
+            if in_fd() and not ui.get(controls.key_damage) then
+                ui.set(ref, ui.get(active.damage))
+            elseif in_air(entity.get_local_player()) and ui.get(active.in_air) and not ui.get(controls.key_damage) then
+                ui.set(ref, ui.get(active.damage_air))
+            elseif visible and not ui.get(controls.key_damage) then
+                if ui.get(active.visible) ~= ui.get(active.damage) then
+                    ui.set(ref, ui.get(active.visible))
+                end
+            elseif ui.get(controls.key_damage) then
+                ui.set(ref, ui.get(active.damage_override))
+            end
+        end
+
+        if name == "hit_chance" then
+            if in_air(entity.get_local_player()) and ui.get(active.in_air) then
+                ui.set(ref, ui.get(active.hit_chance_air))
+            end
+        end
+    end
+end
+
+local function draw_indicators()
+    if ui.get(controls.key_head) then
+        renderer.indicator(255, 50, 50, 255, "HEAD")
+    end
+    if ui.get(controls.key_damage) then
+        renderer.indicator(123, 193, 21, 255, "DMG")
+    end
+    if ui.get(controls.key_hitbox) then
+        renderer.indicator(123, 193, 21, 255, "HB")
+    end
+end
+--#endregion /main functionality
+
 --#region events
----/handle updating weapon settings according to wielded weapon
 client.set_event_callback("net_update_end", function()
     if not ui.get(controls.enabled) then return end
     if entity.get_prop(entity.get_local_player(), "m_lifeState") ~= 0 or not entity.get_local_player() then return end
@@ -379,8 +374,6 @@ client.set_event_callback("net_update_end", function()
     local player_weapon = entity.get_player_weapon(entity.get_local_player())
     local weapon_index = bit.band(65535, entity.get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
-    --/check if weapon is knife/grenade/c4 and `update on misc weapons` is checked, don't change settings to 'Other' when
-    --/this is true to prevent dt having to recharge after switching to either of those
     if not ui.get(controls.update_misc) then
         if (weapon_index > 40 and weapon_index < 50) or (weapon_index > 499 and weapon_index < 524) then
             return
@@ -389,28 +382,26 @@ client.set_event_callback("net_update_end", function()
 
     active_key = get_key(weapon_index)
     local temp = weapon_info[active_key]
-    --/fill hitbox and hitbox_override with atleast one hitbox due to 'target hitbox'
-    --/requiring atleast one or more values
+
     fix_multiselect(temp.hitbox, "Head")
     fix_multiselect(temp.hitbox_override, "Head")
+
     update_settings(active_key)
     cached_key = active_key
 end)
+
 client.set_event_callback("paint", function(ctx)
     if not ui.get(controls.enabled) then return end
 	if entity.get_prop(entity.get_local_player(), "m_lifeState") ~= 0 then	
 		visible = false
 		return
     end
-    --/draw indicators when checkbox 'draw indicators' is true
-    if ui.get(controls.indicators) then
-        draw_indicators()
-    end
-    --/handle player visibility for visible minimum damage
+
+    if ui.get(controls.indicators) then draw_indicators() end
+
     local temp = weapon_info[active_key]
-    --/make sure to not do visibility calculations when 'damage' and 'visible'
-    --/are set to the same value
-    if temp ~= nil and ui.get(temp.damage) ~= ui.get(temp.visible) then
+
+    if temp ~= nil then
         local enemy_visible, enemy_entindex = check_fov(ctx)
         if enemy_entindex == nil then return end
         if enemy_visible and enemy_entindex ~= nil and cached_target ~= enemy_entindex then 
