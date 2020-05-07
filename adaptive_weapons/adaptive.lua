@@ -302,8 +302,7 @@ local function menu_callback(e, menu_call)
         [controls.indicators] = not state,
         [controls.key_damage] = not state,
         [controls.key_hitbox] = not state,
-        [controls.key_head] = not state,
-        [controls.update_misc] = not state
+        [controls.key_head] = not state
     })
 end
 
