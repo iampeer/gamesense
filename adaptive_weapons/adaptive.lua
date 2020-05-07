@@ -32,7 +32,7 @@ end
 generate_damage_labels()
 
 local weapon_indexes = {
-    Global       = { }, --/all other weapons: non selected and knifes, zeus, grenades etc
+    Global      = { }, --/all other weapons: non selected and knifes, zeus, grenades etc
     AWP         = { 9 },
     Auto        = { 11, 38 },
     Scout       = { 40 },
@@ -196,11 +196,11 @@ local reference = {
     delay               = ui.reference("RAGE", "Other", "Delay shot"),
     stop                = ui.reference("RAGE", "Other", "Quick stop"),
     stop_options        = ui.reference("RAGE", "Other", "Quick stop options"),
+    baim_peek           = ui.reference("RAGE", "Other", "Force body aim on peek"),
     baim                = ui.reference("RAGE", "Other", "Prefer body aim"),
     baim_disablers      = ui.reference("RAGE", "Other", "Prefer body aim disablers"),
-    baim_unduck         = ui.reference("RAGE", "Other", "Delay shot on unduck"),
-    baim_onpeek         = ui.reference("RAGE", "Other", "Delay shot on peek"),
-    doubletap           = ui.reference("RAGE", "Other", "Double tap")
+    doubletap           = ui.reference("RAGE", "Other", "Double tap"),
+    doubletap_stop      = ui.reference("RAGE", "Other", "Double tap quick stop")
 }
 
 --#endregion /references
@@ -212,7 +212,6 @@ local controls = {
     enabled         = ui.new_checkbox(menu[1], menu[2], "Enable adaptive weapons"),
     selected_weapon = ui.new_combobox(menu[1], menu[2], "Selected weapon", get_items(weapon_indexes)),
     indicators      = ui.new_checkbox(menu[1], menu[2], "Display override indicators"),
-    update_misc     = ui.new_checkbox(menu[1], menu[2], "Update settings for misc weapons"),
     key_damage      = ui.new_hotkey(menu[1], menu[2], "Hotkey: damage override", false),
     key_hitbox      = ui.new_hotkey(menu[1], menu[2], "Hotkey: hitbox override", false),
     key_head        = ui.new_hotkey(menu[1], menu[2], "Hotkey: force head", false)
@@ -240,11 +239,11 @@ local function generate_weapon_controls()
             delay               = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot", name)),
             stop                = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Quick stop", name)),
             stop_options        = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Quick stop options", name), { "Early", "Slow motion", "Duck", "Move between shots", "Ignore molotov" }),
+            baim_peek           = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Force body aim on peek", name)),
             baim                = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Prefer body aim", name)),
             baim_disablers      = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Prefer body aim disablers", name), { "Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage" }),
-            baim_unduck         = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot on unduck", name)),
-            baim_onpeek         = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Delay shot on peek", name)),
             doubletap           = ui.new_checkbox(menu[1], menu[2], string.format("[%s] Double tap", name)),
+            doubletap_stop      = ui.new_multiselect(menu[1], menu[2], string.format("[%s] Double tap quick stop", name), { "Slow motion", "Duck", "Move between shots" })
  		}
     end
 end
@@ -277,11 +276,13 @@ local function menu_callback(e, menu_call)
                     local baim = ui.get(mode.baim)
                     local stop = ui.get(mode.stop)
                     local air = ui.get(mode.in_air)
+                    local dt = ui.get(mode.doubletap)
 
                     if not next(mp) and (active and j == "dynamic" or j == "multipoint_scale") then set_element = false end
                     if not air and (active and j == "hit_chance_air" or j == "damage_air") then set_element = false end
                     if not stop and (active and j == "stop_options") then set_element = false end
-                    if not baim and (active and j == "baim_disablers" or j == "baim_unduck" or j == "baim_onpeek") then set_element = false end
+                    if not baim and (active and j == "baim_disablers") then set_element = false end
+                    if not dt and (active and j == "doubletap_stop") then set_element = false end
 
                     ui.set_visible(mode[j], active and vis and set_element)
                 end
@@ -311,6 +312,7 @@ bind_callback(weapon_info, menu_callback, "multipoint")
 bind_callback(weapon_info, menu_callback, "in_air")
 bind_callback(weapon_info, menu_callback, "stop")
 bind_callback(weapon_info, menu_callback, "baim")
+bind_callback(weapon_info, menu_callback, "doubletap")
 ui.set_callback(controls.enabled, menu_callback)
 ui.set_callback(controls.selected_weapon, menu_callback)
 --#endregion /control visibility handling
@@ -374,10 +376,8 @@ client.set_event_callback("net_update_end", function()
     local player_weapon = entity.get_player_weapon(entity.get_local_player())
     local weapon_index = bit.band(65535, entity.get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
-    if not ui.get(controls.update_misc) then
-        if (weapon_index > 40 and weapon_index < 50) or (weapon_index > 499 and weapon_index < 524) then
-            return
-        end
+    if (weapon_index > 40 and weapon_index < 50) or (weapon_index > 499 and weapon_index < 524) then
+        return
     end
 
     active_key = get_key(weapon_index)
