@@ -1,7 +1,7 @@
 -- file:    adaptive.lua
 -- version: 1.0
 -- author:  peer <peer#0369>
--- updated: 01/05/2020 (dd/mm/yyyy)
+-- updated: 07/05/2020 (dd/mm/yyyy)
 -- desc:    allows you having settings for multiple weapon groups within one configuration
 
 -- credits: Salvatore, NmChris, Sapphyrus, Aviarita and most likely some others
