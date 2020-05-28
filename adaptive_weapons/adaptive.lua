@@ -396,7 +396,7 @@ local function update_settings( weapon )
                 ui_set( ref, ui_get( active.damage_air ) )
             elseif ui_get( active.doubletap ) and contains( ui_get( active.overrides ), "Double tap" ) and ui_get( ref_doubletap[ 1 ] ) and ui_get( ref_doubletap[ 2 ] ) then
                 ui_set( ref, ui_get( active.doubletap_dmg ) )
-            elseif visible and contains( ui_get( active.overrides ), "Visible damage" ) and ui_get( active.visible ) ~= ui_get( active.damage ) then
+            elseif visible and contains( ui_get( active.overrides ), "Visible damage" ) and ui_get( active.visible ) ~= ui_get( active.damage ) and not ui_get( controls.key_damage ) then
                 ui_set( ref, ui_get( active.visible ) )
             end
         end
