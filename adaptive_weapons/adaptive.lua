@@ -225,7 +225,6 @@ local reference = {
     hitbox              = ui_reference( "RAGE", "Aimbot", "Target hitbox" ),
     multipoint          = multipoint,
     multipoint_scale    = ui_reference( "RAGE", "Aimbot", "Multi-point scale" ),
-    dynamic             = ui_reference( "RAGE", "Aimbot", "Dynamic multi-point" ),
     prefersafe          = ui_reference( "RAGE", "Aimbot", "Prefer safe point" ),
     forcesafe           = ui_reference( "RAGE", "Aimbot", "Force safe point" ),
     forcesafe_limbs     = ui_reference( "RAGE", "Aimbot", "Force safe point on limbs" ),
@@ -264,7 +263,6 @@ local function generate_weapon_controls( )
             hitbox              = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Target hitbox", name ), { "Head", "Chest", "Stomach", "Arms", "Legs", "Feet" } ),
             multipoint          = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Multi-point", name ), { "Head", "Chest", "Stomach", "Arms", "Legs", "Feet" } ),
             multipoint_scale    = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Multi-point scale", name ), 24, 100, 50, true, "%", 1, labels.multipoint),
-            dynamic             = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Dynamic multi-point", name ) ),
             prefersafe          = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Prefer safe point", name ) ),
             forcesafe_limbs     = ui_new_checkbox(menu[ 1 ], menu[ 2 ], s_format( "[%s] Force safe point on limbs", name ) ),
             forcesafe           = ui_new_combobox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Force safe point", name ), { "On hotkey", "Toggle", "Always on", "Toggle" } ),
@@ -328,7 +326,7 @@ local function menu_callback( e, menu_call )
                     local dt_or     = contains( ui_get( mode.overrides ), "Double tap" )
                     local sp_limbs  = contains( ui_get( mode.hitbox ), "Legs" ) or contains( ui_get( mode.hitbox ), "Feet" ) or contains( ui_get( mode.hitbox ), "Arms" ) or false
 
-                    if not next( mp ) and ( active and j == "dynamic" or j == "multipoint_scale" ) then set_element = false end
+                    if not next( mp ) and ( active and j == "multipoint_scale" ) then set_element = false end
                     if not hb_or      and ( active and j == "hitbox_override" ) then set_element = false end
                     if not sp_limbs   and ( active and j == "forcesafe_limbs" ) then set_element = false end
                     if not visible    and ( active and j == "visible" ) then set_element = false end
