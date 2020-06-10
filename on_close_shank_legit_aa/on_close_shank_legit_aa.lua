@@ -1,3 +1,13 @@
+--#region cached functions
+local ui_get, ui_set, ui_reference, ui_set_visible, ui_set_callback = ui.get, ui.set, ui.reference, ui.set_visible, ui.set_callback
+local math_floor, math_sqrt = math.floor, math.sqrt
+local client_log, client_color_log = client.log, client.color_log
+local entity_local_player, entity_get_prop = entity.get_local_player, entity.get_prop
+local renderer_text = renderer.text
+local bit_band, string_format = bit.band, string.format
+
+--#endregion
+
 --#region vec3 library
 ---credits to none (https://gamesense.pub/forums/profile.php?id=1820)
 ---thread url: https://gamesense.pub/forums/viewtopic.php?id=5464
@@ -18,36 +28,36 @@ local draw_indicator = ui.new_checkbox("misc", "Miscellaneous", "Draw indicator 
 local indicator_color = ui.new_color_picker("misc", "Miscellaneous", "\n", 230, 230, 230, 255)
 local indicator_height = ui.new_slider("misc", "Miscellaneous", "Indicator height", -220, 220, 60, true, "px")
 local custom_speed = ui.new_checkbox("misc", "Miscellaneous", "Depend toggling on entity speed")
-local speed = ui.new_slider("misc", "Miscellaneous", "Toggle speed", 0, 300, 200, true, string.format("%s", "u / s"))
+local speed = ui.new_slider("misc", "Miscellaneous", "Toggle speed", 0, 300, 200, true, string_format("%s", "u / s"))
 local debug = ui.new_checkbox("misc", "Miscellaneous", "Debug")
 
-local pitch = ui.reference("aa", "Anti-aimbot angles", "Pitch")
-local yaw = { ui.reference("aa", "Anti-aimbot angles", "Yaw") }
-local lbyt = ui.reference("aa", "Anti-aimbot angles", "Lower body yaw target")
-local limit = ui.reference("aa", "Anti-aimbot angles", "Fake yaw limit")
-local double_tap = { ui.reference("rage", "Other", "Double tap") }
-local on_shot = { ui.reference("aa", "Other", "On shot anti-aim") }
+local pitch = ui_reference("aa", "Anti-aimbot angles", "Pitch")
+local yaw = { ui_reference("aa", "Anti-aimbot angles", "Yaw") }
+local lbyt = ui_reference("aa", "Anti-aimbot angles", "Lower body yaw target")
+local limit = ui_reference("aa", "Anti-aimbot angles", "Fake yaw limit")
+local double_tap = { ui_reference("rage", "Other", "Double tap") }
+local on_shot = { ui_reference("aa", "Other", "On shot anti-aim") }
 
 --#endregion
 
 --#region visibility
 local function update_visibility()
-    local script_state = ui.get(enabled)
-    local speed_state = ui.get(custom_speed)
-    local indicator_state = ui.get(draw_indicator)
+    local script_state = ui_get(enabled)
+    local speed_state = ui_get(custom_speed)
+    local indicator_state = ui_get(draw_indicator)
 
-    ui.set_visible(distance, script_state)
-    ui.set_visible(draw_indicator, script_state)
-    ui.set_visible(indicator_color, script_state and indicator_state)
-    ui.set_visible(indicator_height, script_state and indicator_state)
-    ui.set_visible(custom_speed, script_state)
-    ui.set_visible(speed, script_state and speed_state)
-    ui.set_visible(debug, script_state)
+    ui_set_visible(distance, script_state)
+    ui_set_visible(draw_indicator, script_state)
+    ui_set_visible(indicator_color, script_state and indicator_state)
+    ui_set_visible(indicator_height, script_state and indicator_state)
+    ui_set_visible(custom_speed, script_state)
+    ui_set_visible(speed, script_state and speed_state)
+    ui_set_visible(debug, script_state)
 end
 
 update_visibility()
-ui.set_callback(custom_speed, update_visibility)
-ui.set_callback(draw_indicator, update_visibility)
+ui_set_callback(custom_speed, update_visibility)
+ui_set_callback(draw_indicator, update_visibility)
 
 --#endregion
 
@@ -64,13 +74,13 @@ end
 local function get_nearest_dist()
     local nearest_dist
 
-    local me = Vector3(entity.get_prop(entity.get_local_player(), "m_vecOrigin"))
+    local me = Vector3(entity_get_prop(entity_get_local_player(), "m_vecOrigin"))
     local enemy = nil
 
     for _, player in ipairs(entity.get_players(true)) do
         enemy = player
 
-        local target = Vector3(entity.get_prop(player, "m_vecOrigin"))
+        local target = Vector3(entity_get_prop(player, "m_vecOrigin"))
         local dist = me:dist_to(target)
         if (nearest_dist == nil or dist < nearest_dist) then
             nearest_dist = dist
@@ -91,36 +101,36 @@ end
 
 --#region events
 local function on_run_command(c)
-    if not ui.get(enabled) then
+    if not ui_get(enabled) then
         return
     end
 
     local nearest_dist, nearest_entity = get_nearest_dist()
 
     if not nearest_entity or not nearest_dist then
-        if ui.get(debug) then
-            client.log("[SHANKED?] No entities found.")
+        if ui_get(debug) then
+            client_log("[SHANKED?] No entities found.")
         end
         return
     end
 
-    local exploit_active = ui.get(double_tap[1]) and ui.get(double_tap[2]) or ui.get(on_shot[1]) and ui.get(on_shot[2])
+    local exploit_active = ui_get(double_tap[1]) and ui_get(double_tap[2]) or ui_get(on_shot[1]) and ui_get(on_shot[2])
 
     local player_weapon = entity.get_player_weapon(nearest_entity)
-    local idx = bit.band(65535, entity.get_prop(player_weapon, "m_iItemDefinitionIndex"))
+    local idx = bit_band(65535, entity_get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
-    local enemy_velocity_prop = vec_3(entity.get_prop(nearest_entity, "m_vecVelocity"))
-    local nearest_velocity = math.sqrt(enemy_velocity_prop.x^2+  enemy_velocity_prop.y^2)
+    local enemy_velocity_prop = vec_3(entity_get_prop(nearest_entity, "m_vecVelocity"))
+    local nearest_velocity = math_sqrt(enemy_velocity_prop.x^2 + enemy_velocity_prop.y^2)
 
     if (idx == 42) or (idx >= 500 and idx <= 525) then
-        if ui.get(debug) then
-            client.log(string.format("[SHANKED?] Targeted entity (%s) has knife out.", entity.get_player_name(nearest_entity)))
+        if ui_get(debug) then
+            client_log(string_format("[SHANKED?] Targeted entity (%s) has knife out.", entity.get_player_name(nearest_entity)))
         end
     
-        if ui.get(custom_speed) then
-            if nearest_velocity <= ui.get(speed) then
-                if ui.get(debug) then
-                    client.log(string.format("[SHANKED?] Targeted entity (%s) their speed is under %s, speed: %s.", entity.get_player_name(nearest_entity), ui.get(speed), math.floor(nearest_velocity + 0.5)))
+        if ui_get(custom_speed) then
+            if nearest_velocity <= ui_get(speed) then
+                if ui_get(debug) then
+                    client_log(string_format("[SHANKED?] Targeted entity (%s) their speed is under %s, speed: %s.", entity.get_player_name(nearest_entity), ui_get(speed), math_floor(nearest_velocity + 0.5)))
                 end
                 
                 -- exit when custom speed is used and the target entity has a speed below the set speed
@@ -128,44 +138,44 @@ local function on_run_command(c)
             end
         end
 
-        if nearest_dist <= ui.get(distance) then
-            if ui.get(debug) then
-                client.color_log(30, 220, 30, string.format("[SHANKED?] Targeted entity (%s) their distance to local player is below set distance %s, distance: %s.", entity.get_player_name(nearest_entity), ui.get(distance), math.floor(nearest_dist + 0.5)))
+        if nearest_dist <= ui_get(distance) then
+            if ui_get(debug) then
+                client_color_log(30, 220, 30, string_format("[SHANKED?] Targeted entity (%s) their distance to local player is below set distance %s, distance: %s.", entity.get_player_name(nearest_entity), ui_get(distance), math_floor(nearest_dist + 0.5)))
             end
 
             if active == false then
-                cached_values.pitch = ui.get(pitch)
-                cached_values.yaw = ui.get(yaw[1])
-                cached_values.yaw_angle = ui.get(yaw[2])
-                cached_values.lbyt = ui.get(lbyt)
-                cached_values.limit = ui.get(limit)
+                cached_values.pitch = ui_get(pitch)
+                cached_values.yaw = ui_get(yaw[1])
+                cached_values.yaw_angle = ui_get(yaw[2])
+                cached_values.lbyt = ui_get(lbyt)
+                cached_values.limit = ui_get(limit)
 
-                if ui.get(debug) then
-                    client.log(string.format("[SHANKED?] Cached anti-aim values."))
+                if ui_get(debug) then
+                    client_log(string_format("[SHANKED?] Cached anti-aim values."))
                 end  
             end
 
             active = true
             
-            ui.set(pitch, "Off")
-            ui.set(yaw[1], "180")
-            ui.set(yaw[2], 180)
-            ui.set(lbyt, not exploit_active and "Opposite" or "Eye yaw")
-            ui.set(limit, 60)
+            ui_set(pitch, "Off")
+            ui_set(yaw[1], "180")
+            ui_set(yaw[2], 180)
+            ui_set(lbyt, not exploit_active and "Opposite" or "Eye yaw")
+            ui_set(limit, 60)
         else
-            if ui.get(debug) then
-                client.color_log(220, 30, 30, string.format("[SHANKED?] Targeted entity (%s) their distance to local player is above set distance %s, distance: %s.", entity.get_player_name(nearest_entity), ui.get(distance), math.floor(nearest_dist + 0.5)))
+            if ui_get(debug) then
+                client_color_log(220, 30, 30, string_format("[SHANKED?] Targeted entity (%s) their distance to local player is above set distance %s, distance: %s.", entity.get_player_name(nearest_entity), ui_get(distance), math_floor(nearest_dist + 0.5)))
             end
 
             if cached_values.pitch ~= nil then
-                ui.set(pitch, cached_values.pitch)
-                ui.set(yaw[1], cached_values.yaw)
-                ui.set(yaw[2], cached_values.yaw_angle)
-                ui.set(lbyt, cached_values.lbyt)
-                ui.set(limit, cached_values.limit)
+                ui_set(pitch, cached_values.pitch)
+                ui_set(yaw[1], cached_values.yaw)
+                ui_set(yaw[2], cached_values.yaw_angle)
+                ui_set(lbyt, cached_values.lbyt)
+                ui_set(limit, cached_values.limit)
 
-                if ui.get(debug) then
-                    client.log("[SHANKED?] Anti-aim values reset.")
+                if ui_get(debug) then
+                    client_log("[SHANKED?] Anti-aim values reset.")
                 end
             end
 
@@ -175,13 +185,13 @@ local function on_run_command(c)
         -- weapon is not a knife
     end
 
-    if ui.get(debug) then
-        client.log(string.format("[SHANKED?] Nearest entity (%s) is %sft away and has a speed of %su/s", entity.get_player_name(nearest_entity), math.floor(nearest_dist + 0.5), math.floor(nearest_velocity + 0.5)))
+    if ui_get(debug) then
+        client_log(string_format("[SHANKED?] Nearest entity (%s) is %sft away and has a speed of %su/s", entity.get_player_name(nearest_entity), math_floor(nearest_dist + 0.5), math_floor(nearest_velocity + 0.5)))
     end
 end
 
 local function on_paint()
-    if not ui.get(enabled) then
+    if not ui_get(enabled) then
         return
     end
 
@@ -193,10 +203,10 @@ local function on_paint()
 
     local sx, sy = client.screen_size()
     local cx, cy = sx / 2, sy / 2
-    local r, g, b, a = ui.get(indicator_color)
+    local r, g, b, a = ui_get(indicator_color)
 
-    if active and ui.get(draw_indicator) then 
-        renderer.text(cx, cy + ui.get(indicator_height), r, g, b, a, "cb", 0, "shank? no!")
+    if active and ui_get(draw_indicator) then 
+        renderer_text(cx, cy + ui_get(indicator_height), r, g, b, a, "cb", 0, "shank? no!")
     end
 end
 --#endregion
