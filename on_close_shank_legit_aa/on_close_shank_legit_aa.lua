@@ -2,7 +2,7 @@
 local ui_get, ui_set, ui_reference, ui_set_visible, ui_set_callback = ui.get, ui.set, ui.reference, ui.set_visible, ui.set_callback
 local math_floor, math_sqrt = math.floor, math.sqrt
 local client_log, client_color_log = client.log, client.color_log
-local entity_local_player, entity_get_prop = entity.get_local_player, entity.get_prop
+local entity_get_local_player, entity_get_prop = entity.get_local_player, entity.get_prop
 local renderer_text = renderer.text
 local bit_band, string_format = bit.band, string.format
 
