@@ -117,6 +117,10 @@ local function on_run_command(c)
     local exploit_active = ui_get(double_tap[1]) and ui_get(double_tap[2]) or ui_get(on_shot[1]) and ui_get(on_shot[2])
 
     local player_weapon = entity.get_player_weapon(nearest_entity)
+    if not player_weapon or player_weapon == nil then
+        return
+    end
+    
     local idx = bit_band(65535, entity_get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
     local enemy_velocity_prop = vec_3(entity_get_prop(nearest_entity, "m_vecVelocity"))
