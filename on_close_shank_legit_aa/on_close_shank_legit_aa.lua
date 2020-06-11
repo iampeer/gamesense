@@ -205,7 +205,7 @@ local function on_paint()
     local cx, cy = sx / 2, sy / 2
     local r, g, b, a = ui_get(indicator_color)
 
-    if active and ui_get(draw_indicator) then 
+    if active and ui_get(draw_indicator) and nearest_dist <= ui_get(distance) then 
         renderer_text(cx, cy + ui_get(indicator_height), r, g, b, a, "cb", 0, "shank? no!")
     end
 end
