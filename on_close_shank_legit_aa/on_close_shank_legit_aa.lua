@@ -120,7 +120,7 @@ local function on_run_command(c)
     if not player_weapon or player_weapon == nil then
         return
     end
-    
+
     local idx = bit_band(65535, entity_get_prop(player_weapon, "m_iItemDefinitionIndex"))
 
     local enemy_velocity_prop = vec_3(entity_get_prop(nearest_entity, "m_vecVelocity"))
@@ -159,13 +159,13 @@ local function on_run_command(c)
                 end  
             end
 
-            active = true
-            
             ui_set(pitch, "Off")
             ui_set(yaw[1], "180")
             ui_set(yaw[2], 180)
             ui_set(lbyt, not exploit_active and "Opposite" or "Eye yaw")
             ui_set(limit, 60)
+
+            active = true
         else
             if ui_get(debug) then
                 client_color_log(220, 30, 30, string_format("[SHANKED?] Targeted entity (%s) their distance to local player is above set distance %s, distance: %s.", entity.get_player_name(nearest_entity), ui_get(distance), math_floor(nearest_dist + 0.5)))
