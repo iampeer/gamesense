@@ -97,6 +97,10 @@ local function get_nearest_dist()
     end
 end
 
+local function exploit_active()
+    return (ui_get(double_tap[1]) and ui_get(double_tap[2])) or (ui_get(on_shot[1]) and ui_get(on_shot[2]))
+end
+
 --#endregion
 
 --#region events
@@ -113,8 +117,6 @@ local function on_run_command(c)
         end
         return
     end
-
-    local exploit_active = ui_get(double_tap[1]) and ui_get(double_tap[2]) or ui_get(on_shot[1]) and ui_get(on_shot[2])
 
     local player_weapon = entity.get_player_weapon(nearest_entity)
     if not player_weapon or player_weapon == nil then
@@ -162,7 +164,7 @@ local function on_run_command(c)
             ui_set(pitch, "Off")
             ui_set(yaw[1], "180")
             ui_set(yaw[2], 180)
-            ui_set(lbyt, not exploit_active and "Opposite" or "Eye yaw")
+            ui_set(lbyt, exploit_active() and "Opposite" or "Eye yaw")
             ui_set(limit, 60)
 
             active = true
@@ -186,7 +188,7 @@ local function on_run_command(c)
             active = false
         end
     else
-        -- weapon is not a knife
+        active = false
     end
 
     if ui_get(debug) then
@@ -209,7 +211,7 @@ local function on_paint()
     local cx, cy = sx / 2, sy / 2
     local r, g, b, a = ui_get(indicator_color)
 
-    if active and ui_get(draw_indicator) and nearest_dist <= ui_get(distance) then 
+    if active and ui_get(draw_indicator) then 
         renderer_text(cx, cy + ui_get(indicator_height), r, g, b, a, "cb", 0, "shank? no!")
     end
 end
