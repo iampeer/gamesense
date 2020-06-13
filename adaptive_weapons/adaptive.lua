@@ -238,6 +238,7 @@ local reference = {
     baim                = ui_reference( "RAGE", "Other", "Prefer body aim" ),
     baim_disablers      = ui_reference( "RAGE", "Other", "Prefer body aim disablers" ),
     doubletap           = ui_reference( "RAGE", "Other", "Double tap" ),
+    doubletap_hc        = ui_reference( "RAGE", "Other", "Double tap hit chance" ),
     doubletap_stop      = ui_reference( "RAGE", "Other", "Double tap quick stop" ),
     onshot              = ui_reference( "AA", "Other", "On shot anti-aim" )
 }
@@ -271,12 +272,13 @@ local function generate_weapon_controls( )
             boost               = ui_new_combobox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Accuracy boost", name ), { "Off", "Low", "Medium", "High", "Maximum" } ),
             delay               = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Delay shot", name ) ),
             stop                = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Quick stop", name ) ),
-            stop_options        = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Quick stop options", name ), { "Early", "Slow motion", "Duck", "Move between shots", "Ignore molotov" } ),
+            stop_options        = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Quick stop options", name ), { "Early", "Slow motion", "Duck", "Fake duck", "Move between shots", "Ignore molotov" } ),
             baim_peek           = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Force body aim on peek", name ) ),
             baim                = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Prefer body aim", name ) ),
             baim_disablers      = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Prefer body aim disablers", name ), { "Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage" } ),
             onshot              = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] On shot anti-aim", name ) ),
             doubletap           = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap", name ) ),
+            doubletap_hc        = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap hit chance", name ), 0, 100, 0, true, "%", 1),
             doubletap_stop      = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap quick stop", name ), { "Slow motion", "Duck", "Move between shots" } ),
             overrides           = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Extra's", name ), { "Override hitbox", "Override damage", "Visible damage", "No-spread fix", "Double tap" } ),
             hitbox_override     = ui_new_multiselect( menu[ 1 ], menu[ 2 ], s_format( "[%s] Target hitbox override", name ), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"} ),
@@ -284,9 +286,9 @@ local function generate_weapon_controls( )
             damage_override     = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Override minimum damage", name ), 0, 124, 15, true, "\n", 1, labels.damage ),
             hit_chance_air      = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] No-spread fix hit chance", name ), 0, 100, 30, true, "%", 1, labels.hit_chance ),
             damage_air          = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] No-spread fix minimum damage", name ), 0, 124, 20, true, "\n", 1, labels.damage ),
-            doubletap_hb        = ui_new_multiselect( menu[ 1 ],  menu[ 2 ], s_format( "[%s] Double tap hitbox", name ), { "Head", "Chest", "Stomach", "Arms", "Legs", "Feet" } ),
-            doubletap_hc        = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap minimum hit chance", name ), 0, 100, 55, true, "%", 1, labels.hit_chance ),
-            doubletap_dmg       = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap minimum damage", name ), 0, 124, 15, true, "\n", 1, labels.damage )
+            doubletap_or_hb     = ui_new_multiselect( menu[ 1 ],  menu[ 2 ], s_format( "[%s] Double tap hitbox", name ), { "Head", "Chest", "Stomach", "Arms", "Legs", "Feet" } ),
+            doubletap_or_hc     = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap minimum hit chance", name ), 0, 100, 55, true, "%", 1, labels.hit_chance ),
+            doubletap_or_dmg    = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Double tap minimum damage", name ), 0, 124, 15, true, "\n", 1, labels.damage )
  		}
     end
 end
@@ -334,8 +336,8 @@ local function menu_callback( e, menu_call )
                     if not air        and ( active and j == "hit_chance_air" or j == "damage_air" ) then set_element = false end
                     if not stop       and ( active and j == "stop_options" ) then set_element = false end
                     if not baim       and ( active and j == "baim_disablers" ) then set_element = false end
-                    if not dt         and ( active and j == "doubletap_stop" or j == "doubletap_hb" or j == "doubletap_hc" or j == "doubletap_dmg" ) then set_element = false end
-                    if not dt_or      and ( active and j == "doubletap_hb" or j == "doubletap_hc" or j == "doubletap_dmg" ) then set_element = false end
+                    if not dt         and ( active and j == "doubletap_stop" or j == "doubletap_hc" or j == "doubletap_or_hb" or j == "doubletap_or_hc" or j == "doubletap_or_dmg" ) then set_element = false end
+                    if not dt_or      and ( active and j == "doubletap_or_hb" or j == "doubletap_or_hc" or j == "doubletap_or_dmg" ) then set_element = false end
                     ui_visible( mode[ j ], active and vis and set_element )
                 end
             end
@@ -383,7 +385,7 @@ local function update_settings( weapon )
             elseif ui_get( controls.key_hitbox ) and contains( ui_get( active.overrides ), "Override hitbox" ) then
                 ui_set( ref, ui_get( active.hitbox_override ) )
             elseif ui_get( active.doubletap ) and contains( ui_get( active.overrides ), "Double tap" ) and ui_get( ref_doubletap[ 1 ] ) and ui_get( ref_doubletap[ 2 ] ) then
-                ui_set( ref, ui_get( active.doubletap_hb ) )
+                ui_set( ref, ui_get( active.doubletap_or_hb ) )
             end
         end
 
@@ -393,7 +395,7 @@ local function update_settings( weapon )
             elseif in_air( local_player( ) ) and contains( ui_get( active.overrides ), "No-spread fix" ) then
                 ui_set( ref, ui_get( active.damage_air ) )
             elseif ui_get( active.doubletap ) and contains( ui_get( active.overrides ), "Double tap" ) and ui_get( ref_doubletap[ 1 ] ) and ui_get( ref_doubletap[ 2 ] ) then
-                ui_set( ref, ui_get( active.doubletap_dmg ) )
+                ui_set( ref, ui_get( active.doubletap_or_dmg ) )
             elseif visible and contains( ui_get( active.overrides ), "Visible damage" ) and ui_get( active.visible ) ~= ui_get( active.damage ) and not ui_get( controls.key_damage ) then
                 ui_set( ref, ui_get( active.visible ) )
             end
@@ -403,7 +405,7 @@ local function update_settings( weapon )
             if in_air( local_player( ) ) and contains( ui_get( active.overrides ), "No-spread fix" ) then
                 ui_set( ref, ui_get( active.hit_chance_air ) )
             elseif ui_get( active.doubletap ) and contains( ui_get( active.overrides ), "Double tap" ) and ui_get( ref_doubletap[ 1 ] ) and ui_get( ref_doubletap[ 2 ] ) then
-                ui_set( ref, ui_get( active.doubletap_hc ) )
+                ui_set( ref, ui_get( active.doubletap_or_hc ) )
             end
         end
     end
@@ -430,6 +432,10 @@ client.set_event_callback( "net_update_end", function( )
     if get_prop( local_player( ), "m_lifeState" ) ~= 0 or not local_player( ) then return end
 
     local player_weapon = entity.get_player_weapon( local_player( ) )
+    if player_weapon == nil or not player_weapon then
+        return
+    end
+    
     local weapon_index = band( 65535, get_prop( player_weapon, "m_iItemDefinitionIndex" ) )
 
     if ( weapon_index > 40 and weapon_index < 50 ) or ( weapon_index > 499 and weapon_index < 524 ) then
