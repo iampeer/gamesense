@@ -435,7 +435,7 @@ client.set_event_callback( "net_update_end", function( )
     if player_weapon == nil or not player_weapon then
         return
     end
-    
+
     local weapon_index = band( 65535, get_prop( player_weapon, "m_iItemDefinitionIndex" ) )
 
     if ( weapon_index > 40 and weapon_index < 50 ) or ( weapon_index > 499 and weapon_index < 524 ) then
@@ -447,7 +447,7 @@ client.set_event_callback( "net_update_end", function( )
 
     fix_multiselect( temp.hitbox, "Head" )
     fix_multiselect( temp.hitbox_override, "Head" )
-    fix_multiselect( temp.doubletap_hb, "Head" )
+    fix_multiselect( temp.doubletap_or_hb, "Head" )
 
     update_settings( active_key )
     cached_key = active_key
