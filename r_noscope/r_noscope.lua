@@ -185,8 +185,6 @@ local on_run_command = function(c)
     ui_set(automatic_scope, not script.active)
 end
 
-local inspect = require 'inspect'
-
 local on_paint = function()
     if (not script.active) or (data == nil) then
         return
