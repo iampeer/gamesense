@@ -34,8 +34,7 @@ local script = {
         rifle = { 7, 8, 10, 13, 16, 39, 60 },
         smg = { 17, 19, 24, 26, 33, 34 },
         heavy = { 14, 28 },
-        shotgun = { 25, 27, 29, 35 },
-        zeus = { 31 }
+        shotgun = { 25, 27, 29, 35 }
     }
 }
 
@@ -57,6 +56,8 @@ end
 --VARS
 local active_key
 local config_name
+local load_name
+local cached_name
 
 --#region HELPERS
 local contains = function(tbl, val)
@@ -112,7 +113,7 @@ local get_weapon_index = function(ent)
 end
 
 local is_non_weapon = function(idx)
-    if (idx > 40 and idx < 50 or idx > 499 and idx < 524) then
+    if (idx > 40 and idx < 50 or idx > 499 and idx < 524 or idx == 31) then
         return true
     end
 end
@@ -159,12 +160,12 @@ local prepare_config_load = function(idx)
     end
     
     if contains(selected_groups, upper_first_char(wpn_string)) and wpn_string ~= "global" then
-        config_name = string.lower(wpn_string)
+        load_name = string.lower(wpn_string)
     else
-        config_name = "global"
+        load_name = "global"
     end
 
-    config_load(config_name)
+    config_load(load_name)
 end
 --#endregion
 
