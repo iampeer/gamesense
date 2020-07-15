@@ -266,7 +266,7 @@ local function generate_weapon_controls( )
             multipoint_scale    = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Multi-point scale", name ), 24, 100, 50, true, "%", 1, labels.multipoint),
             prefersafe          = ui_new_checkbox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Prefer safe point", name ) ),
             forcesafe_limbs     = ui_new_checkbox(menu[ 1 ], menu[ 2 ], s_format( "[%s] Force safe point on limbs", name ) ),
-            forcesafe           = ui_new_combobox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Force safe point", name ), { "On hotkey", "Toggle", "Always on", "Toggle" } ),
+            forcesafe           = ui_new_combobox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Force safe point", name ), { "On hotkey", "Always on", "Toggle", "Off hotkey" } ),
             hit_chance          = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Minimum hit chance", name ), 0, 100, 55, true, "%", 1, labels.hit_chance ),
             damage              = ui_new_slider( menu[ 1 ], menu[ 2 ], s_format( "[%s] Minimum damage", name ), 0, 124, 15, true, "\n", 1, labels.damage ),
             boost               = ui_new_combobox( menu[ 1 ], menu[ 2 ], s_format( "[%s] Accuracy boost", name ), { "Off", "Low", "Medium", "High", "Maximum" } ),
