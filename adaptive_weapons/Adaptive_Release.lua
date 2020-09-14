@@ -292,27 +292,11 @@ local function UpdateSettings(key)
     
                 if UIGet(Active.InAir) and not MathHelpers.OnGround(EntityGetLocalPlayer()) then
                     FinalHitChance = UIGet(Active.InAirHitChance)
-                elseif UIGet(Ctrl.NoscopeKey) then    
-                    FinalHitChance = UIGet(Active.HitChanceNoscope)
-                elseif UIGet(Active.Noscope) and not UIGet(Ctrl.NoscopeKey) then
+                elseif UIGet(Active.Noscope) then
                     FinalHitChance = UIGet(Active.HitChanceNoscope)
                 end
     
                 UISet(Ref, FinalHitChance)
-            end
-    
-            if UIGet(Ctrl.NoscopeKey) or UIGet(Active.Noscope) then
-                if UIGet(Ctrl.NoscopeKey) then
-                    UISet(Reference.AutoScope, false)
-                elseif UIGet(Active.Noscope) then
-                    local Result = DoNoscope(key)
-
-                    if DoNoscope(key) then
-                        UISet(Reference.AutoScope, false)
-                    end
-                else
-                    UISet(Reference.AutoScope, UIGet(Active.AutoScope))
-                end
             end
         end
     end
