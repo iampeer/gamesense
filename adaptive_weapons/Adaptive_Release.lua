@@ -480,6 +480,5 @@ BindCallback(WeaponInfo, MenuCallback, "Doubletap")
 BindCallback(WeaponInfo, MenuCallback, "Noscope")
 
 UISetCallback(Ctrl.MasterSwitch, Toggle)
-UISetCallback(Ctrl.MasterSwitch, MenuCallback)
 UISetCallback(Ctrl.CurrentWeapon, MenuCallback)
 --#endregion
