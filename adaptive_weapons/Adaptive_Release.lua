@@ -205,7 +205,7 @@ local Reference = {
     AutoScope = UIReference("rage", "Aimbot", "Automatic scope"),
     AutoPenetration = UIReference("rage", "Aimbot", "Automatic penetration"),
     SilentAim = UIReference("rage", "Aimbot", "Silent aim"),
-    AutomaticFire = UIReference("rage", "Aimbot", "Automatic fire")
+    AutoFire = UIReference("rage", "Aimbot", "Automatic fire")
 }
 
 local FakeDuckRef = UIReference("rage", "Other", "Duck peek assist")
@@ -225,12 +225,12 @@ local function GenerateWeaponControls()
             ForceSafeLimbs = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Force safe point on limbs", Name)),
             HitChance = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Minimum hit chance", Name), 0, 100, 60, true, "%", 1, Labels.HitChance),
             Damage = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Minimum damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
+            Visible = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Visible damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
+            DamageOverride = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Override damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
             AutoFire = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Automatic fire", Name)),
             AutoPenetration = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Automatic penetration", Name)),
             AutoScope = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Automatic scope", Name)),
             HitChanceNoscope = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Minimum noscope hit chance", Name), 0, 100, 60, true, "%", 1, Labels.HitChance),
-            Visible = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Visible damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
-            DamageOverride = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Override damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
             InAir = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Hit chance in air", Name)),
             InAirHitChance = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Air hit chance", Name), 0, 100, 30, true, "%", 1, Labels.HitChance),
             Boost = UINewCombobox(Menu[1], Menu[2], StringFormat("[%s] Accuracy boost", Name), { "Off", "Low", "Medium", "High", "Maximum" }),
@@ -285,6 +285,15 @@ local function UpdateSettings(key)
                 end
     
                 UISet(Ref, FinalDamage)
+            end
+
+            if UIGet(Active.Noscope) then
+                local Result = DoNoscope(key)
+                if DoNoscope(key) then
+                    UISet(Reference.AutoScope, false)
+                end
+            else
+                UISet(Reference.AutoScope, UIGet(Active.AutoScope))
             end
     
             if Name == "HitChance" then
@@ -425,11 +434,6 @@ local function OnPaint()
 
     if DamageOverride then
         RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "DMG " .. UIGet(Reference.Damage))
-        YOffset = YOffset + 11
-    end
-
-    if Noscoping then
-        RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "NOSCOPE")
         YOffset = YOffset + 11
     end
 end
