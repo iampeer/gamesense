@@ -178,6 +178,7 @@ end
 local Ctrl = { 
     MasterSwitch = UINewCheckbox(Menu[1], Menu[2], "Adaptive weapons"),
     MasterColor = UINewColorPicker(Menu[1], Menu[2], "global_clr", 255, 255, 255, 255),
+    NoscopeKey = UINewHotkey(Menu[1], Menu[2], "Noscope override key"),
     DamageKey = UINewHotkey(Menu[1], Menu[2], "Damage override key"),
     CurrentWeapon
 }
@@ -288,9 +289,13 @@ local function UpdateSettings(key)
             end
 
             if UIGet(Active.Noscope) then
-                local Result = DoNoscope(key)
-                if DoNoscope(key) then
-                    UISet(Reference.AutoScope, false)
+                if UIGet(Ctrl.NoscopeKey) then
+                    UISet(Reference.AutoScope, true)
+                else
+                    local Result = DoNoscope(key)
+                    if DoNoscope(key) then
+                        UISet(Reference.AutoScope, UIGet(Active.AutoScope))
+                    end
                 end
             else
                 UISet(Reference.AutoScope, UIGet(Active.AutoScope))
@@ -379,6 +384,7 @@ local function MenuCallback(e, call)
     Helpers.MultiExecute(UISetVisible, {
         [Ctrl.MasterColor] = not State,
         [Ctrl.DamageKey] = not State,
+        [Ctrl.NoscopeKey] = not State,
         [Ctrl.CurrentWeapon] = not State
     })
 end
@@ -419,7 +425,7 @@ local function OnPaint()
 
     local Doubletapping = UIGet(DoubletapRef[1]) and UIGet(DoubletapRef[2]) and UIGet(WeaponInfo[ActiveKey].Enabled)
     local DamageOverride = UIGet(Ctrl.DamageKey) and UIGet(WeaponInfo[ActiveKey].Enabled)
-    local Noscoping = not UIGet(Reference.AutoScope) and UIGet(WeaponInfo[ActiveKey].Enabled)
+    local NoScoping = UIGet(Reference.AutoScope)
 
     local X, Y = ClientScreenSize()
     local XC, YC = X/2, Y/2
@@ -427,15 +433,15 @@ local function OnPaint()
     local R, G, B, A = UIGet(Ctrl.MasterColor)
     local YOffset = 13
 
-    if Doubletapping then
-        RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "DT")
+    if NoScoping == false then
+        RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "NOSCOPE")
         YOffset = YOffset + 11
     end
 
-    if DamageOverride then
-        RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "DMG " .. UIGet(Reference.Damage))
-        YOffset = YOffset + 11
-    end
+    -- if DamageOverride then
+    --     RendererText(XC, YC + YOffset, R, G, B, A, "cb", 400, "DMG " .. UIGet(Reference.Damage))
+    --     YOffset = YOffset + 11
+    -- end
 end
 --#endregion
 --#region Initialize
