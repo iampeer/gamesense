@@ -223,7 +223,7 @@ local function GenerateWeaponControls()
             Multipoint = UINewMultiselect(Menu[1], Menu[2], StringFormat("[%s] Multi-point", Name), {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
             MultipointScale = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Multi-point scale", Name), 24, 100, 65, true, "%", 1, Labels.Multipoint),
             PreferSafe = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Prefer safe point", Name)),
-            AvoidHitbox = UINewCheckbox(Menu[1], Menu[2], StringFormat("[%s] Avoid unsafe hitboxes", Name), {"Head", "Chest", "Stomach", "Arms", "Legs"}),
+            AvoidHitbox = UINewMultiselect(Menu[1], Menu[2], StringFormat("[%s] Avoid unsafe hitboxes", Name), {"Head", "Chest", "Stomach", "Arms", "Legs"}),
             HitChance = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Minimum hit chance", Name), 0, 100, 60, true, "%", 1, Labels.HitChance),
             Damage = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Minimum damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
             Visible = UINewSlider(Menu[1], Menu[2], StringFormat("[%s] Visible damage", Name), 0, 124, 20, true, "\n", 1, Labels.Damage),
